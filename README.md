@@ -78,3 +78,19 @@
 
 ## Top Open Source -
 ![Al Siam's Graph](https://github-readme-activity-graph.cyclic.app/graph?username=alsiam&custom_title=Al%20Siam's%20GitHub%20Activity%20Graph&bg_color=0D1117&color=7F3FBF&line=7F3FBF&point=7F3FBF&area_color=FFFFFF&title_color=FFFFFF&area=true)
+
+## Atributos a archivos
+
+```
+# agregar atributos
+setfattr -n user.name_atribute -v "detalle atributo" file.ext
+```
+```
+# consultar atribuos
+getfattr -d file.ext
+```
+
+```
+# quitar atributos
+setfattr -x user.name_atribute file.ext
+```
