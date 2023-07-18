@@ -31,4 +31,23 @@ Se trata de datos de 2018 que Federico me envió en un archivo de Excel, origina
 colnames(df_dendro)
 ```
 
-Las localidades corresponden a **Bella Vista** y a **Yataiti Calle**, de esta última se describe solo la empresa **Taperitas**. Este subconjunto de datos se compone de `r nrow(df_dendro)` registros. 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+df_dendro_yataity <- df_dendro %>%
+    filter(Localidad != "BellaVista")
+
+# redondear Densidad a 0 decimales
+df_dendro_yataity %<>% mutate(Densidad = round(Densidad, 0))
+
+# drop df_dendro
+rm(df_dendro)
+
+# si Empresa no varia, elminar campos Localidad y Empresa
+df_dendro_yataity %<>% select(-c(Localidad, Empresa))
+
+```
+
+Las localidades corresponden a **Bella Vista** y a **Yataiti Calle**, de esta última se describe solo la empresa **Taperitas**. Este subconjunto de datos se compone de `r nrow(df_dendro_yataity)` registros obtenidos de `r df_dendro_yataity %$% unique(Parcela) %>% length` parcelas, del mismo se destaca:
+- alta variabilidad de la densidad de plantación (se supone que la misma no referencia la densidad inicial)
+- 
