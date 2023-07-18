@@ -7,12 +7,13 @@ output:
     theme: null
     highlight: null
     mathjax: null
-    css: foundation-emails.css
+    css: emails.css
 ---
 
 Federico y Yolanda,
 
-El 7 de julio se comunicó conmigo Guillermo Perotti solicitando información sobre la producción de *Eucalyptus* y *Pinus*. Puntulamente solicitó: 
+El 7 de julio se comunicó conmigo Guillermo Perotti solicitando información sobre la producción de *Eucalyptus* y *Pinus*. Puntulamente solicitó:   
+
 > Curvas de rendimiento o de crecimiento en volumen de *Eucalyptus sp* y *Pinus sp* en función de la edad, para los distintos esquemas de manejo evaluados en el área de influencia de la empresa.
 Guillermo me expresó que dicha demanda debería de ser factible de cumplirse dada la información que se tiene en la empresa. 
 
@@ -30,3 +31,4 @@ Se trata de datos de 2018 que Federico me envió en un archivo de Excel, origina
 colnames(df_dendro)
 ```
 
+Las localidades corresponden a **Bella Vista** y a **Yataiti Calle**, de esta última se describe solo la empresa **Taperitas**. Este subconjunto de datos se compone de `r nrow(df_dendro)` registros. 
