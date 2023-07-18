@@ -8,6 +8,38 @@ source("set_data_dendro.R")
 df_dendro_yataity <- df_dendro %>%
     filter(Localidad != "BellaVista")
 
+# redondear Densidad a 0 decimales
+df_dendro_yataity %<>% mutate(Densidad = round(Densidad, 0))
+
+# graficar dap vs edad
+# discriminar con forma por tipo de datos y cn colores la densidad
+ggplot(
+    df_dendro_yataity,
+    aes(x = Edad, y = Dap, shape = Clase_Dato, color = factor(Densidad))
+    ) +
+    geom_point() +
+    labs(
+        title = "Dap vs Edad",
+        x = "Edad (años)",
+        y = "Dap (cm)"
+    ) +
+    scale_color_discrete(name = "Densidad (plantas/ha)") +
+    theme_bw()
+
+# identificar parcelas en las que la densidad se modifica en una misma edad
+# y generar lista de parcelas a eliminar
+df_dendro_yataity %>%
+    group_by(Edad, Parcela) %>%
+    summarise(
+        l = sd(Densidad, na.rm = TRUE)
+    ) %>%
+    filter(l != 0) %>%
+    select(Parcela)
+
+df_dendro_yataity %>%
+filter(Parcela == 45 & Edad == 6.25) %>%
+tail()
+
 # drop df_dendro
 rm(df_dendro)
 
@@ -50,7 +82,7 @@ df_dendro_yataity_summary %<>% mutate(
 # plot Area_Basal vs Edad by Tratamiento (Factor) and Clase_Dato (Facet)
 # lines group by Parcela
 ggplot(df_dendro_yataity_summary, aes(x = Edad, y = Area_Basal)) +
-    geom_line(aes(group = Parcela)) + 
+    geom_line(aes(group = Parcela)) +
     geom_point() +
     facet_grid(Clase_Dato ~ Tratamiento) +
     labs(
@@ -63,7 +95,7 @@ ggplot(df_dendro_yataity_summary, aes(x = Edad, y = Area_Basal)) +
 # plot Volumen vs Edad by Tratamiento (Factor) and Clase_Dato (Facet)
 # lines group by Parcela
 ggplot(df_dendro_yataity_summary, aes(x = Edad, y = Volumen)) +
-    geom_line(aes(group = Parcela)) + 
+    geom_line(aes(group = Parcela)) +
     geom_point() +
     facet_grid(Clase_Dato ~ Tratamiento) +
     labs(
@@ -76,7 +108,7 @@ ggplot(df_dendro_yataity_summary, aes(x = Edad, y = Volumen)) +
 # plot Dap_m vs Edad by Tratamiento (Factor) and Clase_Dato (Facet)
 # lines group by Parcela
 ggplot(df_dendro_yataity_summary, aes(x = Edad, y = Dap_m)) +
-    geom_line(aes(group = Parcela)) + 
+    geom_line(aes(group = Parcela)) +
     geom_point() +
     facet_grid(Clase_Dato ~ Tratamiento) +
     labs(
