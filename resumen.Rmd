@@ -1,0 +1,32 @@
+---
+title: "Reporte por email"
+subtitle: "Datos de Eucalyptus"
+output: 
+  html_document: 
+    self_contained: yes
+    theme: null
+    highlight: null
+    mathjax: null
+    css: foundation-emails.css
+---
+
+Federico y Yolanda,
+
+El 7 de julio se comunicó conmigo Guillermo Perotti solicitando información sobre la producción de *Eucalyptus* y *Pinus*. Puntulamente solicitó: 
+> Curvas de rendimiento o de crecimiento en volumen de *Eucalyptus sp* y *Pinus sp* en función de la edad, para los distintos esquemas de manejo evaluados en el área de influencia de la empresa.
+Guillermo me expresó que dicha demanda debería de ser factible de cumplirse dada la información que se tiene en la empresa. 
+
+En este documento se presenta un resumen de la información que se tiene disponible en la empresa. El mismo resume los datos que Federico me envió en 2018 y datos que colectamos en 2022. El objetivo es que ustedes puedan evaluar si la información que se tiene es suficiente para cumplir con la demanda de Guillermo, y de ser factible puedan agregar la información que falta.
+
+## Datos de 2018
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+source("set_data_dendro.R")
+```
+
+Se trata de datos de 2018 que Federico me envió en un archivo de Excel, originalmente para la tesis en la que finalmente genere simulaciones. Los datos se organizan en `r ncol(df_dendro)`columnas (luego de eliminar redundantes y operaciones) y `r nrow(df_dendro)` filas. Las variables son las siguientes:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+colnames(df_dendro)
+```
+
