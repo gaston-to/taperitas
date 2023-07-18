@@ -19,7 +19,9 @@ Guillermo me expresó que dicha demanda debería de ser factible de cumplirse da
 
 En este documento se presenta un resumen de la información que se tiene disponible en la empresa. El mismo resume los datos que Federico me envió en 2018 y datos que colectamos en 2022. El objetivo es que ustedes puedan evaluar si la información que se tiene es suficiente para cumplir con la demanda de Guillermo, y de ser factible puedan agregar la información que falta.
 
-## Datos a 2018
+## Datos a 2018 de Eucalyptus
+
+### Dendrometricos  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 source("set_data_dendro.R")
@@ -29,6 +31,9 @@ Se trata de datos de 2018 que Federico me envió en un archivo de Excel, origina
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 colnames(df_dendro)
+
+# tipos de datos
+str(df_dendro)
 ```
 
 
@@ -50,12 +55,15 @@ df_dendro_yataity %<>% select(-c(Localidad, Empresa))
 
 Las localidades corresponden a **Bella Vista** y a **Yataiti Calle**, de esta última se describe solo la empresa **Taperitas**. Este subconjunto de datos se compone de `r nrow(df_dendro_yataity)` registros obtenidos de `r df_dendro_yataity %$% unique(Parcela) %>% length` parcelas, del mismo se destaca:  
 - Alta variabilidad de la densidad de plantación (se supone que la misma no referencia la densidad inicial), se discriminan `r df_dendro_yataity %$% unique(Densidad) %>% length` densidades que van desde `r min(df_dendro_yataity$Densidad)` hasta `r max(df_dendro_yataity$Densidad)` plantas por hectárea.  
-- Se distinguen `r df_dendro_yataity %$% unique(Clase_Dato) %>% length` clases de datos, que se identifican como `r df_dendro_yataity %$% unique(Clase_Dato)`.   
+- Se distinguen `r df_dendro_yataity %$% unique(Clase_Dato) %>% length` clases de datos que se identifican como `r df_dendro_yataity %$% unique(Clase_Dato)`.   
 - La clase de datos identifica el tipo de ensayo o de muestreo, no permite identificar especificamente al ensayo o muestreo. La estructura de los datos no permite identificar al ensayo, tampoco realizar esa trazabilidad.  
 - El rango de edad de los datos es de `r min(df_dendro_yataity$Edad)` a `r max(df_dendro_yataity$Edad)` años.  
 
-### Plot general
+#### Algunas gráficas
 
+A continuación se presentan algunas gráficas que permiten visualizar la información disponible.  
+
+1. El gráfico **A** muestra la distribución de los datos de Dap vs Edad, discriminando por clase de datos y por densidad. El mismo permite visualizar la gran variabilidad de los datos generada por las dos factores implicados.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=5}
 # graficar dap vs edad
 # discriminar con forma por tipo de datos y cn colores la densidad
@@ -68,9 +76,125 @@ ggplot(
     labs(
         title = "Dap vs Edad",
         x = "Edad (años)",
-        y = "Dap (cm)"
+        y = "Dap (cm)",
+        tag = "A"
     ) +
     scale_color_discrete(name = "Densidad (plantas/ha)", guide = "none") +
     theme_bw()
+```  
+  
+2. El gráfico **B** presenta el promedio del Dap de cada parcela en función de la Edad, cada fila presenta la Clase de Dato y las columnas discriminan el número de tratamiento (no se cuenta con descripción de Tratamiento).
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=5}
+
+df_dendro_yataity_summary <- df_dendro_yataity %>%
+    group_by(Clase_Dato, Tratamiento, Parcela, Edad) %>%
+    summarise(
+        Sup_Parcela = mean(Sup_Parcela, na.rm = TRUE) / 10000,
+        Densidad = mean(Densidad, na.rm = TRUE),
+        Arboles = n(),
+        Dap_m = mean(Dap, na.rm = TRUE),
+        Ht_m = mean(Ht, na.rm = TRUE),
+        Area_Basal = sum(pi * (Dap / 200) ^ 2, na.rm = TRUE)
+    )
+
+# Modify Area_Basal: reference area is Sup_Parcela
+df_dendro_yataity_summary %<>% mutate(
+    Area_Basal = Area_Basal / Sup_Parcela
+    )
+
+# plot Dap_m vs Edad by Tratamiento (Factor) and Clase_Dato (Facet)
+# lines group by Parcela
+ggplot(
+    df_dendro_yataity_summary,
+    aes(x = Edad, y = Dap_m, group = Parcela)
+    ) +
+    geom_line() +
+    geom_point() +
+    facet_grid(
+        Clase_Dato ~ Tratamiento,
+        labeller = labeller(Clase_Dato = label_wrap_gen(width = 10))
+        ) +
+    labs(
+        title = "Dap vs Edad",
+        x = "Edad (años)",
+        y = "Dap (cm)",
+        tag = "B"
+    ) +
+    theme_bw()
+ 
 ```
+
+3. Grafico **C**  
+
+El gráfico precedente permite observar un desvalance considerable en la cantidad de observaciones por parcela. La siguiente tabla muestra que el 65% de las parcelas fueron medidas hasta en 3 edades y solo el 12% tiene 8 edades. A su vez, graficamente (plot **C**) se denota una subrepresentación de edades por encima de los 4 años, que posiblemente sea más drástica si se discriminase por Densidad. 
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 2, fig.width=3}
+
+# calcular la cantidad de edades por parcela
+
+tabl_frec <- df_dendro_yataity_summary %>%
+    group_by(Parcela) %>%
+    summarise(
+        Edades = n()
+    ) %>%
+    group_by(Edades) %>%
+    summarise(
+        Parcelas = n()
+    )
+
+# agregar columna con frecuencia relativa
+tabl_frec %<>% mutate(
+    Frec_Rel = Parcelas / sum(Parcelas)
+    )
+
+
+tabl_frec %>% knitr::kable(
+    caption = "Cantidad de parcelas por cantidad de edades",
+    digits = 2
+    ) %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+#        position = "left",
+        font_size = 14,
+        bootstrap_options = c("striped")
+)
+```  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 2, fig.width=3}
+
+
+# realizar plot histograma de edades general
+# a partir de df_dendro_yataity_summary
+# eje de frecuencia entre 0 y 30
+# eje de edades entre 0 y 12
+
+ggplot(
+    df_dendro_yataity_summary,
+    aes(x = Edad)
+    ) +
+    geom_histogram(
+        binwidth = 1,
+        boundary = 0,
+        fill = "grey",
+        color = "black"
+        ) +
+    labs(
+        title = "Histograma de edades",
+        x = "Edad (años)",
+        y = "Frecuencia",
+        tag = "C"
+    ) +
+    scale_y_continuous(
+        breaks = seq(0, 35, 5),
+        limits = c(0, 35)
+        ) +
+    theme_bw()
+```
+
+
+### Datos de Cubicación
+
+
+
+
 
