@@ -79,6 +79,17 @@ df_dendro_yataity_summary %<>% mutate(
     Volumen = Volumen / Sup_Parcela * 0.45
     )
 
+# realizar histograma de la edad
+ggplot(df_dendro_yataity_summary, aes(x = Edad)) +
+    geom_histogram(binwidth = 1) +
+    labs(
+        title = "Histograma de Edad",
+        x = "Edad (años)",
+        y = "Frecuencia"
+    ) +
+    theme_bw()
+
+
 # plot Area_Basal vs Edad by Tratamiento (Factor) and Clase_Dato (Facet)
 # lines group by Parcela
 ggplot(df_dendro_yataity_summary, aes(x = Edad, y = Area_Basal)) +

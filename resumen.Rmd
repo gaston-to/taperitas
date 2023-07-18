@@ -19,7 +19,7 @@ Guillermo me expresó que dicha demanda debería de ser factible de cumplirse da
 
 En este documento se presenta un resumen de la información que se tiene disponible en la empresa. El mismo resume los datos que Federico me envió en 2018 y datos que colectamos en 2022. El objetivo es que ustedes puedan evaluar si la información que se tiene es suficiente para cumplir con la demanda de Guillermo, y de ser factible puedan agregar la información que falta.
 
-## Datos de 2018
+## Datos a 2018
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 source("set_data_dendro.R")
@@ -48,6 +48,29 @@ df_dendro_yataity %<>% select(-c(Localidad, Empresa))
 
 ```
 
-Las localidades corresponden a **Bella Vista** y a **Yataiti Calle**, de esta última se describe solo la empresa **Taperitas**. Este subconjunto de datos se compone de `r nrow(df_dendro_yataity)` registros obtenidos de `r df_dendro_yataity %$% unique(Parcela) %>% length` parcelas, del mismo se destaca:
-- alta variabilidad de la densidad de plantación (se supone que la misma no referencia la densidad inicial)
-- 
+Las localidades corresponden a **Bella Vista** y a **Yataiti Calle**, de esta última se describe solo la empresa **Taperitas**. Este subconjunto de datos se compone de `r nrow(df_dendro_yataity)` registros obtenidos de `r df_dendro_yataity %$% unique(Parcela) %>% length` parcelas, del mismo se destaca:  
+- Alta variabilidad de la densidad de plantación (se supone que la misma no referencia la densidad inicial), se discriminan `r df_dendro_yataity %$% unique(Densidad) %>% length` densidades que van desde `r min(df_dendro_yataity$Densidad)` hasta `r max(df_dendro_yataity$Densidad)` plantas por hectárea.  
+- Se distinguen `r df_dendro_yataity %$% unique(Clase_Dato) %>% length` clases de datos, que se identifican como `r df_dendro_yataity %$% unique(Clase_Dato)`.   
+- La clase de datos identifica el tipo de ensayo o de muestreo, no permite identificar especificamente al ensayo o muestreo. La estructura de los datos no permite identificar al ensayo, tampoco realizar esa trazabilidad.  
+- El rango de edad de los datos es de `r min(df_dendro_yataity$Edad)` a `r max(df_dendro_yataity$Edad)` años.  
+
+### Plot general
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=5}
+# graficar dap vs edad
+# discriminar con forma por tipo de datos y cn colores la densidad
+
+ggplot(
+    df_dendro_yataity,
+    aes(x = Edad, y = Dap, shape = Clase_Dato, color = factor(Densidad))
+    ) +
+    geom_point() +
+    labs(
+        title = "Dap vs Edad",
+        x = "Edad (años)",
+        y = "Dap (cm)"
+    ) +
+    scale_color_discrete(name = "Densidad (plantas/ha)", guide = "none") +
+    theme_bw()
+```
+
