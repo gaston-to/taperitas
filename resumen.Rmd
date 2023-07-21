@@ -1,6 +1,6 @@
 ---
 title: "Reporte por email"
-subtitle: "Datos de Eucalyptus"
+subtitle: "Consulta de Guillermo Perotti"
 output: 
   html_document: 
     self_contained: yes
@@ -25,6 +25,9 @@ En este documento se presenta un resumen de la información que se tiene disponi
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 source("set_data_dendro.R")
+library(knitr)
+library(ggpmisc)
+library(ggpubr)
 ```
 
 Se trata de datos de 2018 que Federico me envió en un archivo de Excel, originalmente para la tesis en la que finalmente genere simulaciones. Los datos se organizan en `r ncol(df_dendro)`columnas (luego de eliminar redundantes y operaciones) y `r nrow(df_dendro)` filas. Las variables son las siguientes:
@@ -191,10 +194,302 @@ ggplot(
     theme_bw()
 ```
 
+---
 
 ### Datos de Cubicación
 
+Al igual que los dastos dasomètricos, los correspondientes a cubicación fueron facilitados por Federico en un diferentes archivos excel. Si bien se cuenta con dichos archivos, con los mismo se generó un único archivo compilatorio rescatando la totalidad de la información que se puso a disposición.
+La siguiente salida muestra la estructura de datos, enunciando los campos que se tienen disponibles, el tipo de datos que aloja y los primeros valores de cada campo.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Import data
+df_taper_euca <- read.csv(
+    list.files(
+        "../../crecimiento-euca/data", pattern = "Perf", full.names = TRUE
+        ),
+    dec = ","
+    )
 
 
+data.frame(
+    variable = names(df_taper_euca),
+    detalle = c(
+        "Autoexplicativo",
+        "Clase de muestra: ej: EEP es ensayo de poda",
+        "Id del tratamiento como aparece originalmente",
+        "Método de cubicación",
+        "Id del arbol tal como aparece en orig.",
+        "Autoexplicativo",
+        "Altura de corte",
+        "Diámetro con corteza a la altura hi",
+        "Diámetro sin corteza a la altura hi",
+        "Altura total del árbol",
+        "Dap con corteza",
+        "Dap sin corteza",
+        "Espezor de corteza"
+    ),
+    classe = sapply(df_taper_euca, typeof),
+    first_values = sapply(
+        df_taper_euca, function(x) paste0(head(x),  collapse = ", ")
+        ),
+    row.names = NULL) %>%
+    kable("html") %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+        font_size = 14,
+        bootstrap_options = c("striped")
+)
+```
 
 
+La siguiente tabla muestra la cantidad de àrboles cubicados por sitios, la misma permite visualizar que los datos disponibles corresponden a *Bella Vista* y *Taperitas* (unicamente) en proporciones no equivalentes.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 2. How many trees (ID.Arbol) are there per Site?
+df_taper_euca %>%
+    group_by(ID.Sitio) %>%
+    summarise(n_trees = n_distinct(ID.Arbol)) %>%
+    arrange(desc(n_trees)) %>%
+    kable("html") %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+        font_size = 14,
+        bootstrap_options = c("striped")
+)
+
+# Eliminate Site == "BV"
+df_taper_euca %<>% filter(ID.Sitio != "BV")
+
+```
+
+
+Complementariamente, al discriminar por Clase y Tratamiento dentro del sitio de interes (Taperitas) la variabilidad de tratamientos involucrados es considerable. 
+Es necesario destacar que la información disponible no permite identificar el tratamiento, solo se cuenta con el ID del mismo. Esto restringue considerablemente las posibilidades de análisis. Tampoco fue posible trazar la información hacia atras para identificar el ensayo o muestreo del que proviene la información, de forma que la reconstrucción de datos desde inventarios tampoco fue factible con la información disponible.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# 3. How many trees (ID.Arbol) are there per ID.Clase and per Trat?
+df_taper_euca %>%
+    group_by(ID.Clase, ID.Trat) %>%
+    summarise(n_trees = n_distinct(ID.Arbol)) %>%
+    arrange(desc(n_trees)) %>%
+    kable("html") %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+        font_size = 14,
+        bootstrap_options = c("striped")
+)
+```  
+  
+La siguiente tabla complementa la precedente, en la misma se detalla, para cada clase de muestra, las edades a las que se muestreo, la cantidad de tratamientos y e número total de arboles cubicados.  
+  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 4. How many trees (ID.Arbol) are there per ID.Clase and Edad?
+df_taper_euca %>%
+    group_by(ID.Clase, Edad) %>%
+    summarise(
+        n_trat = n_distinct(ID.Trat),
+        n_trees = n_distinct(ID.Arbol)
+        ) %>%
+    arrange(Edad) %>%
+    kable() %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+        font_size = 14,
+        bootstrap_options = c("striped")
+)
+```
+  
+
+#### Gráfico de perfiles de ahusamiento
+
+A continuación se presenta un gráfico de perfiles de ahusamiento, discriminando por clase de muestra y por tratamiento. El mismo permite visualizar la considerable variabilidad de los datos y que el patrón se modifica considerablemente de la clase EEP a EER.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=5}
+# 5. Plot De vs Hi, facets = ID.Clase
+df_taper_euca %>%
+    ggplot(aes(x = Hi.m, y = De.cm, color = factor(Edad))) +
+    geom_line(aes(group = ID.Arbol), color = "darkgrey") +
+    geom_point(size = .5) +
+    scale_color_manual(
+        "Edad (años)",
+        values = c("darkgreen",  "#191988", "#960a0a")
+        ) +
+    facet_wrap(~ID.Clase, ncol = 1) +
+    theme_bw() +
+    labs(
+        x = "Altura de corte (m)",
+        y = "Diámetro con corteza (cm)",
+        title = "Ahusamiento de Eucalyptus"
+    )
+```  
+
+
+### Volumen 
+
+La siguiente tabla denota los estadísicos de resumen, promedio y desvío, de las variables individuales observadas, Dap y Ht, y de las computadas, volumen y factor de forma.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# load FuncionesInutiles package
+library(FuncionesInutiles)
+
+# compute smallian vol for each log in tree
+df_taper_euca %<>% smallian_vol(
+        arbol = "ID.Arbol", di = De.cm, long = Hi.m, lt = FALSE
+    ) %>%
+    select(-ID.Sitio, -ID.Trat, -ID.Metodo, -Hi.m, -lt, -Es.c, -st, -nc) 
+
+# resume data
+# 1. Means per ID.Clase and ID.Arbol (Dhb.cm and Ht.m)
+# 2. Sum per ID.Clase and ID.Arbol (Vol.m3)
+
+resume <- df_taper_euca %>%
+    group_by(ID.Clase, ID.Arbol) %>%
+    summarise(
+        Edad = mean(Edad),
+        Dap = mean(Dhb.cm, na.rm = TRUE),
+        Ht = mean(Ht.m, na.rm = TRUE),
+        Vol_m3 = sum(Vol, na.rm = TRUE)
+        )
+
+# calculate volume of cilinder whit Dap and Ht in resume
+resume %<>% mutate(
+    Vol_cil = pi * (Dap / 200)^2 * Ht
+    )
+
+resume %<>% mutate(
+    ff = Vol_m3 / Vol_cil
+    ) %>%
+    select(-Vol_cil)
+
+resume %>%
+    group_by(Edad) %>%
+    summarise(
+        Dap_prom = mean(Dap),
+        Dap_sd = sd(Dap),
+        Ht_prom = mean(Ht),
+        Ht_sd = sd(Ht),
+        Vol_prom = mean(Vol_m3),
+        Vol_sd = sd(Vol_m3),
+        factor_forma = mean(ff, na.rm = TRUE)
+    ) %>%
+    kable("html", digits = 2) %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+        font_size = 14,
+        bootstrap_options = c("striped")
+    )
+```
+
+Al explorar graficamente la relación $Volumen ~ Dap$ se aprecia que la misma es condicional a la edad, la misma claramente es lineal variando tanto en ordenada al origen como en pendiente (algo no deseable) entre edades.
+    
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=5}
+# 6. Plot Vol vs Dap, groups = Edad
+resume %>%
+    ggplot(aes(x = Dap, y = Vol_m3, color = factor(Edad))) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    scale_color_manual(
+        "Edad (años)",
+        values = c("#76c076b2",  "#191988", "#960a0a")
+        ) +
+    theme_bw() +
+    labs(
+        x = "Dap (cm)",
+        y = "Volumen (m3)",
+        title = "Volumen vs Dap"
+    )
+```
+
+---
+
+
+<div class="warning" style='background-color:#76c076b2; color: #69337A; border-left: solid #805AD5 4px; border-radius: 4px; padding:0.7em;'>
+<span> 
+<p style='margin-top:1em; text-align:center'>
+##  Es factible generar curvas Volumen ~ Edad ?
+</p>
+<p style='margin-left:1em;'>
+
+En los apartados previos se presentó lo más completa y esquematicamente posible la información disponible a partir de ensayos y muestreos en plantaciones de *Eucalyptus* de la empresa Taperitas. 
+Dicha exposición se realizó a los fines de discutir la factibilidad de responder a la demanda de Guillermo Perotti, quien solicitó curvas de crecimiento en volumen de *Eucalyptus* y *Pinus* en función de la edad, para los distintos esquemas de manejo evaluados en el área de influencia de la empresa. 
+
+Resumiendo el caso de Eucalyptus:  
+
+- [x] Se dispone de datos de inventarios con edades que llegan a 11 años, aproximadamente.
+- [x] Los datos de inventarios se trazaron hasta el tipo de ensayo o muestreo.
+- [x] Se dispone de datos de cubicación de árboles individuales a tres edades, 11, 14 y 17 años.
+- [x] Los datos de cubicación son consistentes y fueron procesados durante la tesis de maestria (como semilla).
+- [x] Una exploración inicial permite visualizar que la relación Volumen ~ Dap es lineal y condicional a la edad.
+- [ ] Los datos dendrometricos (inventario) presentan numerosas fuentes de variación, la más significativa aparenta ser la densidad, que demandan mayor esfuerzo de muestreo para ser representadas y determinan enfoques de análisis de cierto nivel de complejidad.
+- [ ] Existe un desbalance en los datos que determina, por ejemplo, que se imposible determinar curvas de crecimiento para densidad especificas o bien realizar generalización dado la elevada probabilidad de sesgos y errores.
+- [ ] No se cuenta con la información de base de las cubicaciones, de forma que no es posible reconstruir los datos a partir de los inventarios (Densidades, practicas silvicolas, materiales, tratamientos y/o diseños estadísticos).
+- [ ] La relacion individual del Volúmen con Dap evidencia, en terminos exploratorios, que la pendiente no es homogénea entre edades, lo cual no es deseable en terminos de modelación. Esto plantea interrogantes que a futuro debe resolver si es que esto ocurre en este caso especifico o bien es una caracteristica general de la especie.
+
+Resumiendo el caso *Pinus*:  
+
+- [x] No se cuenta con más información de *Pinus* que el muestreo realizado en 2022 del cual se adjunta el reporte.
+
+Bajo estas condicione no es factible llegar a una respuesta satisfactoria a la demanda de Guillermo Perotti.
+Un camino intermedio es brindar la estimación de las rectas del Volúmen en función de Dap para cada edad, y además:  
+- evaluar si es factible aumentar la cantidad de datos de cubicación y/o inventarios y/o si es factible reconstruir los datos de cubicación a partir de los inventarios.   
+- estudiar la posibilidad de incrementar la calidad de los datos disponibles (por ejemplo: suponiendo que existen planillas fisicas, numerosas veces queda información que no se vuelca a las planillas digitales, o bien se vuelca de forma erronea, o bien se vuelca de forma inconsistente, etc).    
+- proponerle a Guillermo, una vez que se cuente con la información adicional y conforme a factibilidad, la posibilidad de realizar un estudio de crecimiento de *Eucalyptus* y *Pinus* en función de la edad con plazos más acordes al presente ¿reporte?.
+
+</p>
+<p style='margin-bottom:1em; margin-right:1em; text-align:right; font-family:Georgia'> <b>- Gary Provost</b> <i>(100 Ways to Improve Your Writing, 1985)</i>
+</p></span>
+</div>
+
+---
+
+## Regresión del Volumen en función de Dap
+
+Este apartado detalla de forma escueta los resultado del ajuste del modelo
+    $$V_{it} \sim \alpha_t +  \beta_t Dap_{it} + \epsilon_{it}$$
+que expresa al volumen del *i*-ésimo arbol de edad *t* como una recta en función del Dap (mismos subíndices),  en la que el intercepto $\alpha$ y la pendiente $\beta$ varían en función de la edad (*t*), finalmente $\epsilon$ es el error aleatorio.  
+La tabla de anova muestra la significancia de los términos del modelo.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ml1 <- lm(Vol_m3 ~ Dap * factor(Edad), data = resume)
+anova(ml1) %>%
+    kable("html", caption = "Anova de regresión") %>%
+    kableExtra::kable_styling(
+        full_width = TRUE,
+        font_size = 14,
+        bootstrap_options = c("striped")
+    )
+```
+
+Con la regresión, detallada enteriormente, se obtienen un $R^2$ de `r round(summary(ml1)$r.squared, 2)` y un error de predicción de `r round(summary(ml1)$sigma, 2)` $m^3$.  
+
+El gráfico siguiente detalla tanto los datos originales como las rectas ajustadas,  imprimiendo las ecuaciones correspondientes y sus estadísticos.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=5}
+# 7. Plot Vol vs Dap, groups = Edad
+# add regression lines and equations
+resume %>%
+    ggplot(aes(x = Dap, y = Vol_m3, color = factor(Edad))) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    scale_color_manual(
+        "Edad (años)",
+        values = c("#76c076b2",  "#191988", "#960a0a")
+        ) +
+    theme_bw() +
+    labs(
+        x = "Dap (cm)",
+        y = "Volumen (m3)",
+        title = "Volumen vs Dap"
+    ) +
+    stat_poly_eq(
+        eq.with.lhs = "italic(Vol)~`=`~",
+        eq.x.rhs = "~italic(Dap)",
+        use_label(c("eq", "R2", "f", "n")),
+        formula = y ~ x,
+        parse = TRUE,
+        size = 2,
+        color = "black"
+    ) +
+    facet_wrap(~Edad, ncol = 1)
+```
