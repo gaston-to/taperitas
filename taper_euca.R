@@ -137,15 +137,18 @@ resume %>%
         title = "Volumen de Eucalyptus"
     )
 
+
 # calculate the corelation between Vol, Dap and Ht conditioned by Edad
 resume %>%
-    group_by(Edad) %>%
+    #group_by(Edad) %>%
     summarise(
         r_Dap = cor(Dap, Vol_m3, use = "complete.obs"),
-        r_Ht = cor(Ht, Vol_m3, use = "complete.obs")
+        r_Edad = cor(Ht, Vol_m3, use = "complete.obs")
         )
 
-lm(Vol_m3 ~ Dap * factor(Edad), data = resume) %>% summary()
+ml1 <- lm(Vol_m3 ~ Dap * factor(Edad), data = resume)
+summary(ml1)
+anova(ml1)
 
 resume %>%
     ggplot(aes(x = Dap, y = Vol_m3, color = factor(Edad))) +
@@ -154,7 +157,10 @@ resume %>%
         aes(slope = 0.051, intercept = -0.63, colour = "Edad 10.6"), lty = 2
         ) +
     geom_abline(
-        aes(slope = 0.051 + 0.011, intercept = -0.63 - 0.28, colour = "Edad 14"), lty = 3
+        aes(
+            slope = 0.051 + 0.011,
+            intercept = -0.63 - 0.28,
+            colour = "Edad 14"), lty = 3
         ) +
     geom_abline(
         aes(
